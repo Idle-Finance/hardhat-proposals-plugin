@@ -1,3 +1,5 @@
+[![Node.js CI](https://github.com/Idle-Finance/hardhat-proposals-plugin/actions/workflows/node.js.yml/badge.svg)](https://github.com/Idle-Finance/hardhat-proposals-plugin/actions/workflows/node.js.yml)
+
 # hardhat-example-plugin
 
 _A one line description of the plugin_
