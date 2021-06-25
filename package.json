@@ -2,7 +2,17 @@
   "name": "hardhat-proposals",
   "version": "0.1.0",
   "description": "Hardhat plugin for governance proposals",
-  "main": "index.js",
+  "author": "Asaf Silman",
+  "license": "Apache-2.0",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "keywords": [
+    "idle",
+    "etheruem",
+    "smart-contracts",
+    "hardhat",
+    "hardhat-plugin"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -10,15 +20,20 @@
     "type": "git",
     "url": "git+https://github.com/Idle-Finance/hardhat-proposals-plugin.git"
   },
-  "keywords": [
-    "idle",
-    "hardhat",
-    "plugin"
+  "files": [
+    "dist/src/",
+    "src/",
+    "LICENSE",
+    "README.md"
   ],
-  "author": "Asaf Silman",
-  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/Idle-Finance/hardhat-proposals-plugin/issues"
   },
-  "homepage": "https://github.com/Idle-Finance/hardhat-proposals-plugin#readme"
+  "homepage": "https://github.com/Idle-Finance/hardhat-proposals-plugin#readme",
+  "peerDependencies": {
+    "hardhat": "^2.0.0"
+  },
+  "devDependencies": {
+    "hardhat": "^2.0.0"
+  }
 }
