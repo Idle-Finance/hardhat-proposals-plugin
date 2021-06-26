@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-proposals",
+  "name": "hardhat-proposals-plugin",
   "version": "0.1.0",
   "description": "Hardhat plugin for governance proposals",
   "author": "Asaf Silman",
@@ -35,15 +35,18 @@
   },
   "homepage": "https://github.com/Idle-Finance/hardhat-proposals-plugin#readme",
   "peerDependencies": {
+    "ethers": "^5.3.1",
     "hardhat": "^2.0.0"
   },
   "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@types/chai": "^4.2.19",
     "@types/fs-extra": "^9.0.11",
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.12.4",
     "chai": "^4.3.4",
-    "hardhat": "^2.0.0",
+    "ethers": "^5.3.1",
+    "hardhat": "^2.4.0",
     "mocha": "^7.2.0",
     "prettier": "^2.3.1",
     "ts-node": "^10.0.0",
