@@ -1,24 +1,29 @@
 // tslint:disable-next-line no-implicit-dependencies
+import { loadFixture } from "@ethereum-waffle/provider";
 import { assert } from "chai";
 import { BigNumber } from "ethers";
 
 import { AlphaProposalBuilder } from "../src/proposals";
 
-import { useEnvironment } from "./helpers";
+import { alphaProposalFixture } from "./fixtures";
 
 describe("AlphaProposalBuilder", function () {
-  useEnvironment("hardhat-project");
-
   it("builds proposal", async function () {
-    const governor = await this.hre.ethers.getContractAt(
-      require("../abi/governorAlpha.json"),
-      "0xc0da01a04c3f3e0be433606045bb7017a7323e38"
-    );
+    const { governor, proposer, voter1 } = await loadFixture(alphaProposalFixture);
 
-    const x = governor.functions.castVote(BigNumber.from("1"), true);
-
-    const a = new AlphaProposalBuilder(governor)
+    const proposal = new AlphaProposalBuilder(governor)
+      .setProposer(proposer)
       .addAction(governor, "castVote", [BigNumber.from("1"), true])
+      .addAction(governor, "castVote", [BigNumber.from("2"), false], 5)
+      .setDescription("Test Proposal")
       .build();
+
+    await proposal.propose();
+
+    // await proposal.vote(voter1)
+    // await proposal.queue()
+    // await proposal.execute()
+
+    await proposal.printProposalInfo()
   });
 });

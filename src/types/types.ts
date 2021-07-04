@@ -1,4 +1,4 @@
-import { BigNumber, BytesLike, Contract } from "ethers";
+import { BigNumber, BytesLike, Contract, Wallet } from "ethers";
 import { Result } from "ethers/lib/utils";
 
 export interface AlphaReceipt {
@@ -20,8 +20,8 @@ export enum AlphaProposalState {
 }
 
 export interface IAlphaProposal {
-  id: number;
-  proposer: string | null;
+  id: BigNumber;
+  proposer: Wallet | null;
 
   targets: string[];
   values: BigNumber[];
