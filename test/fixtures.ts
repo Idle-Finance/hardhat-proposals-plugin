@@ -1,5 +1,4 @@
-import { time } from "console";
-import { deployContract, Fixture } from "ethereum-waffle";
+import { deployContract, Fixture, MockProvider } from "ethereum-waffle";
 import { utils, Wallet } from "ethers";
 
 import {
@@ -7,7 +6,13 @@ import {
   Timelock,
   TimelockTest,
   VotingToken,
+  SimpleStorage
 } from "../src/types/ethers-contracts";
+
+interface BaseFixture {
+  provider: MockProvider,
+  wallets: Wallet[]
+}
 
 interface AlphaContracts {
   governor: GovernorAlpha;
@@ -24,9 +29,11 @@ interface Actors {
   voter3: Wallet;
 }
 
-type AlphaContractsAndActorFixture = AlphaContracts & Actors;
+type AlphaContractsAndActorFixture = AlphaContracts & Actors & BaseFixture;
 
-interface AlphaProposalsFixture extends AlphaContractsAndActorFixture {} // can be extended in the future
+interface AlphaProposalsFixture extends AlphaContractsAndActorFixture {
+  simpleStorage: SimpleStorage
+} // can be extended in the future
 
 export const alphaProposalFixture: Fixture<AlphaProposalsFixture> =
   async function (wallets: Wallet[], provider): Promise<AlphaProposalsFixture> {
@@ -48,6 +55,8 @@ export const alphaProposalFixture: Fixture<AlphaProposalsFixture> =
       require("../src/bytecode/governorAlpha.json"),
       [harnessTimelock.address, votingToken.address, guardian.address]
     )) as GovernorAlpha;
+
+    const simpleStorage = (await deployContract(deployer, require("../src/bytecode/simpleStorage.json"))) as SimpleStorage
 
     // transfer timelock to governor
     await harnessTimelock.connect(deployer).harnessSetAdmin(governor.address)
@@ -84,5 +93,8 @@ export const alphaProposalFixture: Fixture<AlphaProposalsFixture> =
       voter1, // distribute 1,000,000 tokens
       voter2, // distribute   500,000 tokens
       voter3, // distribute     1,000 tokens
+      provider,
+      wallets,
+      simpleStorage: simpleStorage
     };
   };

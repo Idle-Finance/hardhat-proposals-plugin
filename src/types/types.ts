@@ -29,5 +29,5 @@ export interface IAlphaProposal {
   calldatas: BytesLike[];
 
   contracts: (Contract | null)[];
-  args: (Result | null)[];
+  args: (Result)[];
 }
