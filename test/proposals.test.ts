@@ -13,7 +13,6 @@ describe("AlphaProposalBuilder", function () {
   useEnvironment("hardhat-project")
 
   it("builds proposal", async function () {
-    this.hre.waffle.provider
 
     const loadFixture = this.hre.waffle.createFixtureLoader(
       this.hre.waffle.provider.getWallets(),
@@ -22,7 +21,9 @@ describe("AlphaProposalBuilder", function () {
 
     const { provider, governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
 
-    const proposal = new AlphaProposalBuilder(provider, governor, votingToken)
+    let proposal = (await this.hre.proposal.builders.alpha())
+      .setGovernor(governor)
+      .setVotingToken(votingToken)
       .setProposer(proposer)
       .addAction(simpleStorage, "set", [BigNumber.from("1")])
       .addAction(simpleStorage, "set", [BigNumber.from("2")])
@@ -30,14 +31,14 @@ describe("AlphaProposalBuilder", function () {
       .addAction(simpleStorage, "set", [BigNumber.from("4")])
       .addAction(simpleStorage, "set", [BigNumber.from("5")])
       .addAction(simpleStorage, "set", [BigNumber.from("6")])
-      .addAction(governor, "castVote", [BigNumber.from("1"), true])
+      // .addAction(governor, "castVote", [BigNumber.from("1"), true])
       .addAction(simpleStorage, "set", [BigNumber.from("8")])
       .addAction(simpleStorage, "set", [BigNumber.from("9")])
       .addAction(simpleStorage, "set", [BigNumber.from("10")])
       .setDescription("Test Proposal")
       .build();
 
-    await proposal.propose();
+    // await proposal.propose();
 
     await proposal.simulate()
 
@@ -46,6 +47,6 @@ describe("AlphaProposalBuilder", function () {
     // await proposal.execute()
 
 
-    await proposal.printProposalInfo()
+    // await proposal.printProposalInfo()
   });
 });

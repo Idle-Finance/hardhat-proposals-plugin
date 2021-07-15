@@ -1,16 +1,19 @@
 import { BigNumber, BytesLike, Contract, Wallet, utils, ContractReceipt, ContractTransaction } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
+// import { EthereumProvider } from "hardhat/types";
 import {
   FormatTypes,
   FunctionFragment,
   hexDataSlice,
   Result,
 } from "ethers/lib/utils";
+import { EthereumProvider, HardhatRuntimeEnvironment } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 
-import { GovernorAlpha } from "./types/ethers-contracts/GovernorAlpha";
-import { VotingToken } from "./types/ethers-contracts/VotingToken";
+import { GovernorAlpha, VotingToken } from "./types/ethers-contracts/index"
 import { Timelock__factory } from "./types/ethers-contracts/factories/Timelock__factory";
+import { VotingToken__factory } from "./types/ethers-contracts/factories/VotingToken__factory";
+import { GovernorAlpha__factory } from "./types/ethers-contracts/factories/GovernorAlpha__factory";
 import { IAlphaProposal } from "./types/types";
 
 
@@ -25,11 +28,15 @@ enum ProposalState {
   Executed
 }
 
+type ContractLike = Contract | string
+
 export class AlphaProposal implements IAlphaProposal {
-  public readonly provider: JsonRpcProvider
+  private readonly hre: HardhatRuntimeEnvironment
+  public readonly ethersProvider: JsonRpcProvider
+  public readonly provider: EthereumProvider
   
-  public readonly governor: GovernorAlpha;
-  public readonly votingToken: VotingToken;
+  public governor?: GovernorAlpha;
+  public votingToken?: VotingToken;
 
   public id: BigNumber;
   public proposer: Wallet | null;
@@ -43,9 +50,12 @@ export class AlphaProposal implements IAlphaProposal {
   public contracts: (Contract | null)[];
   public args: (Result)[];
 
-  constructor(provider: JsonRpcProvider, governor: GovernorAlpha, votingToken: VotingToken) {
-    this.provider = provider;
-    this.governor = governor;
+  constructor(hre: HardhatRuntimeEnvironment, governor?: GovernorAlpha, votingToken?: VotingToken) {
+    this.hre = hre
+    this.provider = hre.network.provider;
+    this.ethersProvider = hre.ethers.provider;
+
+    this.governor = governor
     this.votingToken = votingToken
 
     this.id = BigNumber.from("0");
@@ -61,13 +71,29 @@ export class AlphaProposal implements IAlphaProposal {
     this.args = new Array<Result>();
   }
 
+  public setGovernor(governor: GovernorAlpha) {
+    this.governor = governor
+  }
+
+  public setVotingToken(votingToken: VotingToken) {
+    this.votingToken = votingToken
+  }
+
+  public _ready() : boolean {
+    return this.governor !== undefined && this.votingToken !== undefined
+  }
+
   public async propose(proposer?: Wallet) {
+    if (!this._ready()) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
+    }
     if (proposer) {
       this.proposer = proposer
     }
 
     if (this.proposer) {
-      const proposalId = await this.governor.connect(this.proposer).callStatic.propose(
+      const governorAsProposer = this.governor!.connect(this.proposer)
+      const proposalId = await governorAsProposer.callStatic.propose(
         this.targets,
         this.values,
         this.signatures,
@@ -75,7 +101,8 @@ export class AlphaProposal implements IAlphaProposal {
         this.description
       );
 
-      await this.governor.connect(this.proposer).propose(this.targets,
+      await governorAsProposer.propose(
+        this.targets,
         this.values,
         this.signatures,
         this.calldatas,
@@ -88,73 +115,91 @@ export class AlphaProposal implements IAlphaProposal {
     }
   }
 
-  private validProposal() {
+  private proposalSubmitted() {
     return !this.id.isZero()
   }
 
   private async getProposalState(): Promise<ProposalState> {
-    if (!this.validProposal()) {
+    if (!this._ready()) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
+    }
+    if (!this.proposalSubmitted()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal has not been submitted yet")
     }
-    const proposalState = await this.governor.state(this.id)
+    const proposalState = await this.governor!.state(this.id)
 
     return proposalState as ProposalState
   }
 
   public async vote(signer: Wallet, support: boolean=true) {
-    if (!this.validProposal()) {
+    if (!this._ready()) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
+    }
+    if (!this.proposalSubmitted()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal has not been submitted yet")
     }
 
     let currentState = await this.getProposalState()
     if (currentState == ProposalState.Active) {
-      await this.governor.connect(signer).castVote(this.id, support)
+      await this.governor!.connect(signer).castVote(this.id, support)
     } else {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal is not in an active state")
     }
   }
 
   public async queue(signer?: Wallet) {
-    if (!this.validProposal()) {
+    if (!this._ready()) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
+    }
+    if (!this.proposalSubmitted()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal has not been submitted yet")
     }
 
     let governor = this.governor
     if (signer) {
-      governor = governor.connect(signer)
+      governor = governor!.connect(signer)
     }
 
-    governor.queue(this.id)
+    await governor!.queue(this.id)
   }
 
   public async execute(signer?: Wallet) {
-    if (!this.validProposal()) {
+    if (!this._ready()) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot propose without a proposer")
+    }
+    if (!this.proposalSubmitted()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal has not been submitted yet")
     }
 
     let governor = this.governor
     if (signer) {
-      governor = governor.connect(signer)
+      governor = governor!.connect(signer)
     }
 
-    governor.execute(this.id)
+    await governor!.execute(this.id)
   }
 
   // queues the action to the timelock by impersonating the governor
   // advances time in order to execute proposal
   // analyses errors
   public async simulate() {
-    await this.provider.send("hardhat_impersonateAccount", [this.governor.address])
-    await this.provider.send("hardhat_setBalance", [this.governor.address, "0xffffffffffffffff"])
-    let governorSigner = await this.provider.getSigner(this.governor.address)
+    if (!this._ready()) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
+    }
+    // if (!(this.provider instanceof Ethereu)) {
+    //   throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot simulate on this provider")
+    // }
+    await this.provider.send("hardhat_impersonateAccount", [this.governor!.address])
+    await this.provider.send("hardhat_setBalance", [this.governor!.address, "0xffffffffffffffff"])
+    let governorSigner = await this.hre.ethers.getSigner(this.governor!.address)
 
-    let timelock = new Timelock__factory(governorSigner).attach(await this.governor.timelock())
+    let timelock = Timelock__factory.connect(await this.governor!.timelock(), governorSigner)
     
     await this.provider.send("hardhat_impersonateAccount", [timelock.address])
     await this.provider.send("hardhat_setBalance", [timelock.address, "0xffffffffffffffff"])
-    let timelockSigner = await this.provider.getSigner(timelock.address)
+    let timelockSigner = await this.ethersProvider.getSigner(timelock.address)
     
-    let blockInfo = await this.provider.getBlock("latest")
+    let blockInfo = await this.ethersProvider.getBlock("latest")
     let delay = await timelock.delay()
 
     let eta = delay.add(blockInfo.timestamp).add("50")
@@ -203,18 +248,18 @@ export class AlphaProposal implements IAlphaProposal {
       }
     }
     this.provider.send("evm_setAutomine", [true])
-    await this.provider.send("hardhat_stopImpersonatingAccount", [this.governor.address])
+    await this.provider.send("hardhat_stopImpersonatingAccount", [this.governor!.address])
     await this.provider.send("hardhat_stopImpersonatingAccount", [timelock.address])
   }
 
   public async printProposalInfo() {
     console.log('--------------------------------------------------------')
-    if (this.validProposal()) {
-      const proposalInfo = await this.governor.proposals(this.id)
+    if (this.proposalSubmitted() && this._ready()) {
+      const proposalInfo = await this.governor!.proposals(this.id)
       const state = await this.getProposalState()
       
-      let votingTokenName = await this.votingToken.name();
-      let votingTokenDecimals = BigNumber.from("10").pow(await this.votingToken.decimals());
+      let votingTokenName = await this.votingToken!.name();
+      let votingTokenDecimals = BigNumber.from("10").pow(await this.votingToken!.decimals());
       
       console.log(`Id: ${this.id.toString()}`)
       console.log(`For Votes: ${proposalInfo.forVotes.div(votingTokenDecimals)} ${votingTokenName} Votes`)
@@ -223,8 +268,11 @@ export class AlphaProposal implements IAlphaProposal {
       console.log(`Vote End: ${proposalInfo.endBlock}`)
 
       console.log(`State: ${state.toString()}`)
-    } else {
+    } else if (this._ready()) {
       console.log("Unsubmitted proposal")
+    } else {
+      console.log("Cannot execute without governor or voting token")
+      return
     }
 
     for (let i = 0; i < this.targets.length; i++) {
@@ -256,19 +304,65 @@ export class AlphaProposal implements IAlphaProposal {
 }
 
 export class AlphaProposalBuilder {
-  public readonly provider: JsonRpcProvider
-  public readonly governor: GovernorAlpha;
-  public readonly votingToken: VotingToken
+  private readonly hre: HardhatRuntimeEnvironment
+  public readonly ethersProvider: JsonRpcProvider
   private readonly maxActions: number;
+  public governor?: GovernorAlpha;
+  public votingToken?: VotingToken;
   private proposal: AlphaProposal;
 
-  constructor(provider: JsonRpcProvider, governor: Contract, votingToken: Contract, maxActions: number = 10) {
-    this.provider = provider
-    this.governor = governor as GovernorAlpha;
-    this.votingToken = votingToken as VotingToken;
-    this.maxActions = maxActions;
+  constructor(hre: HardhatRuntimeEnvironment, governor?: ContractLike, votingToken?: ContractLike, maxActions?: number);
+  constructor(hre: HardhatRuntimeEnvironment, governor: ContractLike, votingToken: ContractLike, maxActions: number = 10) {
+    this.hre = hre
+    this.ethersProvider = hre.ethers.provider
 
-    this.proposal = new AlphaProposal(this.provider, this.governor, this.votingToken);
+    if (governor instanceof Contract) {
+      this.governor = governor as GovernorAlpha;
+    } else if (typeof governor === 'string' && governor !== "") {
+      this.governor = GovernorAlpha__factory.connect(governor, this.ethersProvider)
+    }
+
+    if (votingToken instanceof Contract) {
+      this.votingToken = votingToken as VotingToken
+    }
+    else if (typeof votingToken === 'string' && votingToken !== "") {
+      this.votingToken = VotingToken__factory.connect(votingToken, this.ethersProvider)
+    }
+
+    this.maxActions = maxActions || 10;
+    this.proposal = new AlphaProposal(hre, this.governor, this.votingToken);
+  }
+
+  setGovernor(governor: ContractLike): AlphaProposalBuilder {
+    let _governor: GovernorAlpha
+    if (governor instanceof Contract) {
+      _governor = governor as GovernorAlpha
+    } else if (typeof governor === 'string') {
+      _governor = GovernorAlpha__factory.connect(governor, this.ethersProvider)
+    } else {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Invalid governor")
+    }
+
+    this.governor = _governor
+    this.proposal.setGovernor(_governor)
+
+    return this;
+  }
+
+  setVotingToken(votingToken: ContractLike): AlphaProposalBuilder {
+    let _votingToken: VotingToken
+    if (votingToken instanceof Contract) {
+      _votingToken = votingToken as VotingToken
+    } else if (typeof votingToken === 'string') {
+      _votingToken = VotingToken__factory.connect(votingToken, this.ethersProvider)
+    } else {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Invalid governor")
+    }
+
+    this.votingToken = _votingToken
+    this.proposal.setVotingToken(_votingToken)
+
+    return this;
   }
 
   setProposer(proposer: Wallet): AlphaProposalBuilder {

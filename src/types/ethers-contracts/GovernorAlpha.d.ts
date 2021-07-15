@@ -31,7 +31,6 @@ interface GovernorAlphaInterface extends ethers.utils.Interface {
     "cancel(uint256)": FunctionFragment;
     "castVote(uint256,bool)": FunctionFragment;
     "castVoteBySig(uint256,bool,uint8,bytes32,bytes32)": FunctionFragment;
-    "comp()": FunctionFragment;
     "execute(uint256)": FunctionFragment;
     "getActions(uint256)": FunctionFragment;
     "getReceipt(uint256,address)": FunctionFragment;
@@ -87,7 +86,6 @@ interface GovernorAlphaInterface extends ethers.utils.Interface {
     functionFragment: "castVoteBySig",
     values: [BigNumberish, boolean, BigNumberish, BytesLike, BytesLike]
   ): string;
-  encodeFunctionData(functionFragment: "comp", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "execute",
     values: [BigNumberish]
@@ -169,7 +167,6 @@ interface GovernorAlphaInterface extends ethers.utils.Interface {
     functionFragment: "castVoteBySig",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "comp", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "execute", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getActions", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getReceipt", data: BytesLike): Result;
@@ -311,8 +308,6 @@ export class GovernorAlpha extends BaseContract {
       s: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    comp(overrides?: CallOverrides): Promise<[string]>;
 
     execute(
       proposalId: BigNumberish,
@@ -459,8 +454,6 @@ export class GovernorAlpha extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  comp(overrides?: CallOverrides): Promise<string>;
-
   execute(
     proposalId: BigNumberish,
     overrides?: PayableOverrides & { from?: string | Promise<string> }
@@ -593,8 +586,6 @@ export class GovernorAlpha extends BaseContract {
       s: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
-
-    comp(overrides?: CallOverrides): Promise<string>;
 
     execute(proposalId: BigNumberish, overrides?: CallOverrides): Promise<void>;
 
@@ -799,8 +790,6 @@ export class GovernorAlpha extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    comp(overrides?: CallOverrides): Promise<BigNumber>;
-
     execute(
       proposalId: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
@@ -907,10 +896,8 @@ export class GovernorAlpha extends BaseContract {
       v: BigNumberish,
       r: BytesLike,
       s: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      GovernorAlpha      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
-
-    comp(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     execute(
       proposalId: BigNumberish,
