@@ -298,7 +298,11 @@ export class AlphaProposal implements IAlphaProposal {
         console.log(` ├─ value ────── ${utils.formatEther(value.toString())} ETH`)
       }
       console.log(` ├─ signature ── ${signature}`)
-      console.log(` └─ args ─────── ${args}`)
+      for (let j = 0; j < args.length-1; j++) {
+        const arg = args[j];
+        console.log(` ├─ args [ ${j} ] ─ ${arg}`)
+      }
+      console.log(` └─ args [ ${args.length-1} ] ─ ${args[args.length-1]}`)
     }
   }
 }
