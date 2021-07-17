@@ -1,4 +1,4 @@
-import { BigNumber, BytesLike, Contract, Wallet, utils, ContractReceipt, ContractTransaction } from "ethers";
+import { BigNumber, BytesLike, Contract, Signer, utils, ContractReceipt, ContractTransaction } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 // import { EthereumProvider } from "hardhat/types";
 import {
@@ -39,7 +39,7 @@ export class AlphaProposal implements IAlphaProposal {
   public votingToken?: VotingToken;
 
   public id: BigNumber;
-  public proposer: Wallet | null;
+  public proposer: Signer | null;
   public targets: string[];
   public values: BigNumber[];
   public signatures: string[];
@@ -83,7 +83,7 @@ export class AlphaProposal implements IAlphaProposal {
     return this.governor !== undefined && this.votingToken !== undefined
   }
 
-  public async propose(proposer?: Wallet) {
+  public async propose(proposer?: Signer) {
     if (!this._ready()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
     }
@@ -131,7 +131,7 @@ export class AlphaProposal implements IAlphaProposal {
     return proposalState as ProposalState
   }
 
-  public async vote(signer: Wallet, support: boolean=true) {
+  public async vote(signer: Signer, support: boolean=true) {
     if (!this._ready()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
     }
@@ -147,7 +147,7 @@ export class AlphaProposal implements IAlphaProposal {
     }
   }
 
-  public async queue(signer?: Wallet) {
+  public async queue(signer?: Signer) {
     if (!this._ready()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
     }
@@ -163,7 +163,7 @@ export class AlphaProposal implements IAlphaProposal {
     await governor!.queue(this.id)
   }
 
-  public async execute(signer?: Wallet) {
+  public async execute(signer?: Signer) {
     if (!this._ready()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot propose without a proposer")
     }
@@ -365,7 +365,7 @@ export class AlphaProposalBuilder {
     return this;
   }
 
-  setProposer(proposer: Wallet): AlphaProposalBuilder {
+  setProposer(proposer: Signer): AlphaProposalBuilder {
     this.proposal.proposer = proposer
 
     return this;
