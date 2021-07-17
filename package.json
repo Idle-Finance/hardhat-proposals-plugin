@@ -23,7 +23,8 @@
     "build": "npm run build:types && npm run build:typescript",
     "build:typescript": "tsc",
     "build:types": "typechain --target ethers-v5 --out-dir src/types/ethers-contracts src/bytecode/*",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "publish": "npm run build && npm publish"
   },
   "repository": {
     "type": "git",

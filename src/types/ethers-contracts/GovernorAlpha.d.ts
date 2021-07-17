@@ -896,7 +896,7 @@ export class GovernorAlpha extends BaseContract {
       v: BigNumberish,
       r: BytesLike,
       s: BytesLike,
-      GovernorAlpha      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
     execute(

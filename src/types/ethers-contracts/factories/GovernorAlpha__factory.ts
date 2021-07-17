@@ -325,21 +325,6 @@ const _abi = [
     type: "function",
   },
   {
-    constant: true,
-    inputs: [],
-    name: "comp",
-    outputs: [
-      {
-        internalType: "contract CompInterface",
-        name: "",
-        type: "address",
-      },
-    ],
-    payable: false,
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     constant: false,
     inputs: [
       {
