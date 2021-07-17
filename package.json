@@ -1,5 +1,8 @@
 {
-  "name": "hardhat-proposals-plugin",
+  "name": "@idle-finance/hardhat-proposals-plugin",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.0",
   "description": "Hardhat plugin for governance proposals",
   "author": "Asaf Silman",
