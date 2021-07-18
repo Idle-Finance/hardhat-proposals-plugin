@@ -37,7 +37,7 @@ extendEnvironment((hre) => {
   // We add a field to the Hardhat Runtime Environment here.
   // We use lazyObject to avoid initializing things until they are actually
   // needed.
-  hre.proposal = lazyObject(() => {
+  hre.proposals = lazyObject(() => {
     return {
       builders: {
         alpha: async () => new AlphaProposalBuilder(hre, hre.config.proposals.governor, hre.config.proposals.votingToken)

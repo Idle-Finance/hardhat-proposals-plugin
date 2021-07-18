@@ -21,7 +21,7 @@ describe("AlphaProposalBuilder", function () {
 
     const { provider, governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
 
-    let proposal = (await this.hre.proposal.builders.alpha())
+    let proposal = (await this.hre.proposals.builders.alpha())
       .setGovernor(governor)
       .setVotingToken(votingToken)
       .setProposer(proposer)
@@ -47,6 +47,6 @@ describe("AlphaProposalBuilder", function () {
     // await proposal.execute()
 
 
-    // await proposal.printProposalInfo()
+    await proposal.printProposalInfo()
   });
 });

@@ -262,6 +262,7 @@ export class AlphaProposal implements IAlphaProposal {
       let votingTokenDecimals = BigNumber.from("10").pow(await this.votingToken!.decimals());
       
       console.log(`Id: ${this.id.toString()}`)
+      console.log(`Description: ${this.description}`)
       console.log(`For Votes: ${proposalInfo.forVotes.div(votingTokenDecimals)} ${votingTokenName} Votes`)
       console.log(`Agasint Votes: ${proposalInfo.againstVotes.div(votingTokenDecimals)} ${votingTokenName} Votes`)
 
@@ -270,10 +271,12 @@ export class AlphaProposal implements IAlphaProposal {
       console.log(`State: ${state.toString()}`)
     } else if (this._ready()) {
       console.log("Unsubmitted proposal")
+      console.log(`Description: ${this.description}`)
     } else {
       console.log("Cannot execute without governor or voting token")
       return
     }
+
 
     for (let i = 0; i < this.targets.length; i++) {
       const contract = this.contracts[i]
