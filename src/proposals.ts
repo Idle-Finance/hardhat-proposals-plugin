@@ -1,34 +1,14 @@
-import { BigNumber, BytesLike, Contract, Signer, utils, ContractReceipt, ContractTransaction } from "ethers";
+import { BigNumber, BytesLike, Contract, Signer, utils, ContractReceipt, ContractTransaction, BigNumberish } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 // import { EthereumProvider } from "hardhat/types";
-import {
-  FormatTypes,
-  FunctionFragment,
-  hexDataSlice,
-  Result,
-} from "ethers/lib/utils";
+import { Result, defaultAbiCoder } from "ethers/lib/utils";
 import { EthereumProvider, HardhatRuntimeEnvironment } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 
-import { GovernorAlpha, VotingToken } from "./types/ethers-contracts/index"
-import { Timelock__factory } from "./types/ethers-contracts/factories/Timelock__factory";
-import { VotingToken__factory } from "./types/ethers-contracts/factories/VotingToken__factory";
-import { GovernorAlpha__factory } from "./types/ethers-contracts/factories/GovernorAlpha__factory";
-import { IAlphaProposal } from "./types/types";
+import { GovernorAlpha, VotingToken } from "./ethers-contracts/index"
+import { Timelock__factory } from "./ethers-contracts/factories/Timelock__factory";
 
-
-enum ProposalState {
-  Pending,
-  Active,
-  Canceled,
-  Defeated,
-  Succeeded,
-  Queued,
-  Expired,
-  Executed
-}
-
-type ContractLike = Contract | string
+import { AlphaProposalState, IAlphaProposal } from "./types";
 
 export class AlphaProposal implements IAlphaProposal {
   private readonly hre: HardhatRuntimeEnvironment
@@ -115,11 +95,41 @@ export class AlphaProposal implements IAlphaProposal {
     }
   }
 
+  public async loadFromId(id: BigNumberish) {
+    if (this.governor === undefined) {
+      throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot load data without governor")
+    }
+
+    this.id = BigNumber.from(id)
+    let proposalInfo = await this.governor.proposals(id)
+    let actionsInfo = await this.governor.getActions(id)
+
+    this.proposer = new this.hre.ethers.VoidSigner(proposalInfo.proposer)
+    this.targets = actionsInfo.targets
+    this.values = actionsInfo[1] // `values` gets overwrittn by array.values
+    this.signatures = actionsInfo.signatures
+    this.calldatas = actionsInfo.calldatas
+
+    this.description = "<DESCRIPTION NOT LOADED>"
+    
+    let args = []
+    
+    for (let i = 0; i < this.targets.length; i++) {
+      const signature = this.signatures[i];
+      const calldata = this.calldatas[i];
+
+      const arg = defaultAbiCoder.decode([ signature ], calldata);
+      args.push(arg)
+    }
+    
+    this.args = args
+  }
+
   private proposalSubmitted() {
     return !this.id.isZero()
   }
 
-  private async getProposalState(): Promise<ProposalState> {
+  private async getProposalState(): Promise<AlphaProposalState> {
     if (!this._ready()) {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Cannot execute without governor or voting token")
     }
@@ -128,7 +138,7 @@ export class AlphaProposal implements IAlphaProposal {
     }
     const proposalState = await this.governor!.state(this.id)
 
-    return proposalState as ProposalState
+    return proposalState as AlphaProposalState
   }
 
   public async vote(signer: Signer, support: boolean=true) {
@@ -140,7 +150,7 @@ export class AlphaProposal implements IAlphaProposal {
     }
 
     let currentState = await this.getProposalState()
-    if (currentState == ProposalState.Active) {
+    if (currentState == AlphaProposalState.Active) {
       await this.governor!.connect(signer).castVote(this.id, support)
     } else {
       throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal is not in an active state")
@@ -307,126 +317,5 @@ export class AlphaProposal implements IAlphaProposal {
       }
       console.log(` └─ args [ ${args.length-1} ] ─ ${args[args.length-1]}`)
     }
-  }
-}
-
-export class AlphaProposalBuilder {
-  private readonly hre: HardhatRuntimeEnvironment
-  public readonly ethersProvider: JsonRpcProvider
-  private readonly maxActions: number;
-  public governor?: GovernorAlpha;
-  public votingToken?: VotingToken;
-  private proposal: AlphaProposal;
-
-  constructor(hre: HardhatRuntimeEnvironment, governor?: ContractLike, votingToken?: ContractLike, maxActions?: number);
-  constructor(hre: HardhatRuntimeEnvironment, governor: ContractLike, votingToken: ContractLike, maxActions: number = 10) {
-    this.hre = hre
-    this.ethersProvider = hre.ethers.provider
-
-    if (governor instanceof Contract) {
-      this.governor = governor as GovernorAlpha;
-    } else if (typeof governor === 'string' && governor !== "") {
-      this.governor = GovernorAlpha__factory.connect(governor, this.ethersProvider)
-    }
-
-    if (votingToken instanceof Contract) {
-      this.votingToken = votingToken as VotingToken
-    }
-    else if (typeof votingToken === 'string' && votingToken !== "") {
-      this.votingToken = VotingToken__factory.connect(votingToken, this.ethersProvider)
-    }
-
-    this.maxActions = maxActions || 10;
-    this.proposal = new AlphaProposal(hre, this.governor, this.votingToken);
-  }
-
-  setGovernor(governor: ContractLike): AlphaProposalBuilder {
-    let _governor: GovernorAlpha
-    if (governor instanceof Contract) {
-      _governor = governor as GovernorAlpha
-    } else if (typeof governor === 'string') {
-      _governor = GovernorAlpha__factory.connect(governor, this.ethersProvider)
-    } else {
-      throw new HardhatPluginError("hardhat-proposals-plugin", "Invalid governor")
-    }
-
-    this.governor = _governor
-    this.proposal.setGovernor(_governor)
-
-    return this;
-  }
-
-  setVotingToken(votingToken: ContractLike): AlphaProposalBuilder {
-    let _votingToken: VotingToken
-    if (votingToken instanceof Contract) {
-      _votingToken = votingToken as VotingToken
-    } else if (typeof votingToken === 'string') {
-      _votingToken = VotingToken__factory.connect(votingToken, this.ethersProvider)
-    } else {
-      throw new HardhatPluginError("hardhat-proposals-plugin", "Invalid governor")
-    }
-
-    this.votingToken = _votingToken
-    this.proposal.setVotingToken(_votingToken)
-
-    return this;
-  }
-
-  setProposer(proposer: Signer): AlphaProposalBuilder {
-    this.proposal.proposer = proposer
-
-    return this;
-  }
-
-  addAction(
-    contract: Contract,
-    method: string,
-    args: any[],
-    value: number = 0
-  ): AlphaProposalBuilder {
-    if (this.proposal.targets.length >= this.maxActions) {
-      throw new HardhatPluginError(
-        "hardhat-proposals-plugin",
-        "Too many actions on proposal"
-      );
-    }
-
-    // get function signature
-    const _interface = contract.interface;
-    const functionFragment: FunctionFragment = _interface.getFunction(method);
-    const signature = functionFragment.format(FormatTypes.sighash);
-
-    if (functionFragment.inputs.length != args.length) {
-      throw new HardhatPluginError("hardhat-proposals-plugin", "arguments length do not match signature")
-    }
-
-    // encode function call data
-    const functionData = _interface.encodeFunctionData(functionFragment, args);
-    const functionArgs = _interface.decodeFunctionData(
-      functionFragment,
-      functionData
-    );
-    const calldata = hexDataSlice(functionData, 4); // Remove the sighash from the function data
-
-    this.proposal.targets.push(contract.address);
-    this.proposal.values.push(BigNumber.from(value));
-
-    this.proposal.signatures.push(signature);
-    this.proposal.calldatas.push(calldata);
-
-    this.proposal.contracts.push(contract);
-    this.proposal.args.push(functionArgs);
-
-    return this;
-  }
-
-  setDescription(description: string): AlphaProposalBuilder {
-    this.proposal.description = description;
-
-    return this;
-  }
-
-  build(): AlphaProposal {
-    return this.proposal;
   }
 }

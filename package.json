@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Hardhat plugin for governance proposals",
   "author": "Asaf Silman",
   "license": "Apache-2.0",
@@ -22,7 +22,7 @@
     "test": "mocha --exit --recursive 'test/**/*.test.ts'",
     "build": "npm run build:types && npm run build:typescript",
     "build:typescript": "tsc",
-    "build:types": "typechain --target ethers-v5 --out-dir src/types/ethers-contracts src/bytecode/*",
+    "build:types": "typechain --target ethers-v5 --out-dir src/ethers-contracts src/bytecode/*",
     "watch": "tsc -w",
     "publish": "npm run build && npm publish"
   },

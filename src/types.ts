@@ -1,6 +1,8 @@
 import { BigNumber, BytesLike, Contract, Signer } from "ethers";
 import { Result } from "ethers/lib/utils";
 
+export type ContractLike = Contract | string
+
 export interface AlphaReceipt {
   voter: string;
   hasVoted: boolean;

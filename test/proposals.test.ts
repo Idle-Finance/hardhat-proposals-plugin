@@ -4,24 +4,22 @@ import { assert } from "chai";
 import { BigNumber } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
-import { AlphaProposalBuilder } from "../src/proposals";
-
 import { alphaProposalFixture } from "./fixtures";
 import { useEnvironment } from "./helpers";
 
 describe("AlphaProposalBuilder", function () {
   useEnvironment("hardhat-project")
 
-  it("builds proposal", async function () {
+  it("builds proposal", async function() {
 
     const loadFixture = this.hre.waffle.createFixtureLoader(
       this.hre.waffle.provider.getWallets(),
       this.hre.waffle.provider
     );
 
-    const { provider, governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
+    const { governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
 
-    let proposal = (await this.hre.proposals.builders.alpha())
+    let proposal = this.hre.proposals.builders.alpha()
       .setGovernor(governor)
       .setVotingToken(votingToken)
       .setProposer(proposer)
@@ -49,4 +47,33 @@ describe("AlphaProposalBuilder", function () {
 
     await proposal.printProposalInfo()
   });
+
+  it("loads proposal", async function() {
+    const loadFixture = this.hre.waffle.createFixtureLoader(
+      this.hre.waffle.provider.getWallets(),
+      this.hre.waffle.provider
+    );
+
+    const { governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
+
+    let proposal = this.hre.proposals.builders.alpha()
+      .setGovernor(governor)
+      .setVotingToken(votingToken)
+      .setProposer(proposer)
+      .addAction(simpleStorage, "set", [BigNumber.from("1")])
+      .addAction(simpleStorage, "set", [BigNumber.from("2")])
+      .addAction(simpleStorage, "set", [BigNumber.from("3")])
+      .setDescription("Test Proposal")
+      .build();
+
+    await proposal.propose();
+
+    let fetchedProposal = await this.hre.proposals.proposals.alpha()
+    fetchedProposal.setGovernor(governor)
+    fetchedProposal.setVotingToken(votingToken)
+
+    await fetchedProposal.loadFromId(1)
+
+    await fetchedProposal.printProposalInfo()
+  })
 });

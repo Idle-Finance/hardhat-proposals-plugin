@@ -7,7 +7,7 @@ import {
   TimelockTest,
   VotingToken,
   SimpleStorage
-} from "../src/types/ethers-contracts";
+} from "./ethers-contracts";
 
 interface BaseFixture {
   provider: MockProvider,
