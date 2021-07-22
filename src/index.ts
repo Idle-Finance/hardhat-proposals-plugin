@@ -37,26 +37,21 @@ extendConfig(
 task("proposal", "Interact with proposals using hardhat")
   .addParam("action", "What type of action to perform from options (info) (default: \"info\")", "info", types.string)
   .addOptionalParam("governor", "The governor address", undefined, types.string)
-  .addOptionalParam("token", "The voting token registered with the governor", undefined, types.string)
+  .addOptionalParam("votingToken", "The voting token registered with the governor", undefined, types.string)
   .addPositionalParam("id", "The proposal id", undefined,  types.int)
   .setAction(async (args, hre) => {
-    const {action, governor, token, id} = args
-    let governorContract, votingTokenContract
-
-    if (governor) {
-      governorContract = GovernorAlpha__factory.connect(governor, hre.ethers.provider)
-    }
-    if (token) {
-      votingTokenContract = VotingToken__factory.connect(token, hre.ethers.provider)
-    }
+    const {action, governor, votingToken, id} = args
+    
+    const governorContract = GovernorAlpha__factory.connect(governor || hre.config.proposals.governor, hre.ethers.provider)
+    const votingTokenContract = VotingToken__factory.connect(votingToken || hre.config.proposals.votingToken, hre.ethers.provider)
 
     switch (action) {
       case "info":
         {
           let proposal = hre.proposals.proposals.alpha()
 
-          if (governorContract) proposal.setGovernor(governorContract)
-          if (votingTokenContract) proposal.setVotingToken(votingTokenContract)
+          proposal.setGovernor(governorContract)
+          proposal.setVotingToken(votingTokenContract)
           
           await proposal.loadFromId(id)
           await proposal.printProposalInfo()

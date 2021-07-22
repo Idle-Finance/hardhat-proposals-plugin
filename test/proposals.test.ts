@@ -72,10 +72,10 @@ describe("AlphaProposalBuilder", function () {
     await proposal.vote(proposer);
     await proposal.vote(voter2, false);
 
-    let fetchedProposal = await this.hre.proposals.proposals.alpha()
+    let fetchedProposal = this.hre.proposals.proposals.alpha()
     fetchedProposal.setGovernor(governor)
     fetchedProposal.setVotingToken(votingToken)
 
-    await this.hre.run("proposal", {governor: governor.address, token: votingToken.address, id: 1})
+    await this.hre.run("proposal", { governor: governor.address, 'votingToken': votingToken.address, id: 1})
   })
 });
