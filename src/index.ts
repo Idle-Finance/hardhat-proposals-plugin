@@ -36,8 +36,8 @@ extendConfig(
 
 task("proposal", "Interact with proposals using hardhat")
   .addParam("action", "What type of action to perform from options (info) (default: \"info\")", "info", types.string)
-  .addParam("governor", "The governor address", undefined, types.string)
-  .addParam("token", "The voting token registered with the governor", undefined, types.string)
+  .addOptionalParam("governor", "The governor address", undefined, types.string)
+  .addOptionalParam("token", "The voting token registered with the governor", undefined, types.string)
   .addPositionalParam("id", "The proposal id", undefined,  types.int)
   .setAction(async (args, hre) => {
     const {action, governor, token, id} = args
