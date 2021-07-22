@@ -1,6 +1,5 @@
 import { BigNumber, BytesLike, Contract, Signer, utils, ContractReceipt, ContractTransaction, BigNumberish } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
-// import { EthereumProvider } from "hardhat/types";
 import { Result, defaultAbiCoder } from "ethers/lib/utils";
 import { EthereumProvider, HardhatRuntimeEnvironment } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
@@ -153,7 +152,7 @@ export class AlphaProposal implements IAlphaProposal {
     if (currentState == AlphaProposalState.Active) {
       await this.governor!.connect(signer).castVote(this.id, support)
     } else {
-      throw new HardhatPluginError("hardhat-proposals-plugin", "Proposal is not in an active state")
+      throw new HardhatPluginError("hardhat-proposals-plugin", `Proposal is not in an active state, received ${currentState}`)
     }
   }
 

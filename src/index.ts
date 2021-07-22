@@ -1,4 +1,4 @@
-import { extendEnvironment , extendConfig} from "hardhat/config";
+import { extendEnvironment , extendConfig, task, types } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 
@@ -8,6 +8,7 @@ import { AlphaProposal } from "./proposals";
 // This import is needed to let the TypeScript compiler know that it should include your type
 // extensions in your npm package's types file.
 import "./type-extensions";
+import { GovernorAlpha__factory, VotingToken__factory } from "./ethers-contracts/index"
 
 extendConfig(
   (config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -32,6 +33,38 @@ extendConfig(
     }
   }
 );
+
+task("proposal", "Interact with proposals using hardhat")
+  .addParam("action", "What type of action to perform from options (info) (default: \"info\")", "info", types.string)
+  .addParam("governor", "The governor address", undefined, types.string)
+  .addParam("token", "The voting token registered with the governor", undefined, types.string)
+  .addPositionalParam("id", "The proposal id", undefined,  types.int)
+  .setAction(async (args, hre) => {
+    const {action, governor, token, id} = args
+    let governorContract, votingTokenContract
+
+    if (governor) {
+      governorContract = GovernorAlpha__factory.connect(governor, hre.ethers.provider)
+    }
+    if (token) {
+      votingTokenContract = VotingToken__factory.connect(token, hre.ethers.provider)
+    }
+
+    switch (action) {
+      case "info":
+        {
+          let proposal = hre.proposals.proposals.alpha()
+
+          if (governorContract) proposal.setGovernor(governorContract)
+          if (votingTokenContract) proposal.setVotingToken(votingTokenContract)
+          
+          await proposal.loadFromId(id)
+          await proposal.printProposalInfo()
+        }
+        break;
+    }
+  })
+  
 
 extendEnvironment((hre) => {
   // We add a field to the Hardhat Runtime Environment here.

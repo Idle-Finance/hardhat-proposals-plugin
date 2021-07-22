@@ -48,13 +48,13 @@ describe("AlphaProposalBuilder", function () {
     await proposal.printProposalInfo()
   });
 
-  it("loads proposal", async function() {
+  it("loads proposal via task", async function() {
     const loadFixture = this.hre.waffle.createFixtureLoader(
       this.hre.waffle.provider.getWallets(),
       this.hre.waffle.provider
     );
 
-    const { governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
+    const { provider, governor, votingToken, proposer, simpleStorage, voter2 } = await loadFixture(alphaProposalFixture);
 
     let proposal = this.hre.proposals.builders.alpha()
       .setGovernor(governor)
@@ -67,13 +67,15 @@ describe("AlphaProposalBuilder", function () {
       .build();
 
     await proposal.propose();
+    await provider.send("evm_mine", [])
+    await provider.send("evm_mine", [])
+    await proposal.vote(proposer);
+    await proposal.vote(voter2, false);
 
     let fetchedProposal = await this.hre.proposals.proposals.alpha()
     fetchedProposal.setGovernor(governor)
     fetchedProposal.setVotingToken(votingToken)
 
-    await fetchedProposal.loadFromId(1)
-
-    await fetchedProposal.printProposalInfo()
+    await this.hre.run("proposal", {governor: governor.address, token: votingToken.address, id: 1})
   })
 });
