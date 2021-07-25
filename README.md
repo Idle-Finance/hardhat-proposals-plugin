@@ -105,3 +105,5 @@ export default task(..., async(args, hre) => {
 })
 
 ```
+
+A full project implementation using this plugin can be found [here](https://github.com/asafsilman/test-usdt-proposal)
