@@ -1,87 +1,107 @@
 [![Node.js CI](https://github.com/Idle-Finance/hardhat-proposals-plugin/actions/workflows/node.js.yml/badge.svg)](https://github.com/Idle-Finance/hardhat-proposals-plugin/actions/workflows/node.js.yml)
 
-# hardhat-example-plugin
+# hardhat-proposals-plugin
 
-_A one line description of the plugin_
-
-[Hardhat](https://hardhat.org) plugin example. 
+_A Hardhat plugin for working with on-chain proposals_
 
 ## What
 
-<_A longer, one paragraph, description of the plugin_>
+A helper plugin for developing and testing on-chain proposals
 
-This plugin will help you with world domination by implementing a simple tic-tac-toe in the terminal.
+This plugin will assist in simulating proposals in a Hardhat environment for testing and debugging proposals before they are submitted on-chain.
 
 ## Installation
 
-<_A step-by-step guide on how to install the plugin_>
 
 ```bash
-npm install <your npm package name> [list of peer dependencies]
+npm install --save-dev @idle-finance/hardhat-proposals-plugin @nomiclabs/hardhat-ethers ethers
 ```
 
 Import the plugin in your `hardhat.config.js`:
 
 ```js
-require("<your plugin npm package name>");
+require("@idle-finance/hardhat-proposals-plugin");
 ```
 
 Or if you are using TypeScript, in your `hardhat.config.ts`:
 
 ```ts
-import "<your plugin npm package name>";
+import "@idle-finance/hardhat-proposals-plugin";
 ```
 
 
 ## Required plugins
 
-<_The list of all the required Hardhat plugins if there are any_>
-
-- [@nomiclabs/hardhat-web3](https://github.com/nomiclabs/hardhat/tree/master/packages/hardhat-web3)
+- [@nomiclabs/hardhat-ethers](https://github.com/nomiclabs/hardhat/tree/master/packages/hardhat-ethers)
 
 ## Tasks
 
-<_A description of each task added by this plugin. If it just overrides internal 
-tasks, this may not be needed_>
-
-This plugin creates no additional tasks.
-
-<_or_>
-
-This plugin adds the _example_ task to Hardhat:
+This plugin adds the _proposal_ task to Hardhat:
 ```
-output of `npx hardhat help example`
+Usage: hardhat [GLOBAL OPTIONS] proposal [--action <STRING>] --governor <STRING> --voting-token <STRING> id
+
+OPTIONS:
+
+  --action              What type of action to perform from options (info) (default: "info") (default: "info")
+  --governor            The governor address 
+  --voting-token        The voting token registered with the governor 
+
+POSITIONAL ARGUMENTS:
+
+  id    The proposal id 
+
+proposal: Interact with proposals using hardhat
 ```
 
 ## Environment extensions
 
-<_A description of each extension to the Hardhat Runtime Environment_>
-
-This plugin extends the Hardhat Runtime Environment by adding an `example` field
-whose type is `ExampleHardhatRuntimeEnvironmentField`.
+This plugin extends the Hardhat Runtime Environment by adding the `proposal` field whose type is `ProposalsHardHatRunTimeEnvironmentField`
 
 ## Configuration
 
-<_A description of each extension to the HardhatConfig or to its fields_>
-
-This plugin extends the `HardhatUserConfig`'s `ProjectPathsUserConfig` object with an optional
-`newPath` field.
+This plugin extends the `HardhatUserConfig` by adding the `proposals` field whose type is `ProposalsUserConfig`
 
 This is an example of how to set it:
 
 ```js
 module.exports = {
-  paths: {
-    newPath: "new-path"
+  proposals: {
+    governor: "0x2256b25CFC8E35c3135664FD03E77595042fe31B",
+    votingToken: "0x875773784Af8135eA0ef43b5a374AaD105c5D39e"
   }
 };
 ```
 
 ## Usage
 
-<_A description of how to use this plugin. How to use the tasks if there are any, etc._>
-
 There are no additional steps you need to take for this plugin to work.
 
-Install it and access ethers through the Hardhat Runtime Environment anywhere
+Install it and access proposals through the Hardhat Runtime Environment anywhere
 you need it (tasks, scripts, tests, etc).
+
+## Example 
+
+The following example illustrates how to use the plugin.
+
+This example will create a proposal for a `GovernorAlpha` like proposal.
+
+```js
+...
+export default task(..., async(args, hre) => {
+  ...
+  let proposer = await hre.ethers.getSigner(PROPOSER)
+
+  let proposal = hre.proposals.builders.alpha()
+    .setProposer(proposer)
+    .addContractAction(
+      DAIInterestRateModelV2, // Contract we are interacting with
+      "_setInterestRateModel(address)", // Contract signature
+      ['0'] // Method args
+    )
+    .setDescription("CIP #2 ...") // Set proposal description
+    .build()
+
+  await proposal.simulate() // Simulate the execution of the proposal.
+})
+
+```

@@ -1,4 +1,4 @@
-import { BigNumber, BytesLike, Contract, Signer, utils, ContractReceipt, ContractTransaction, BigNumberish, VoidSigner, ethers } from "ethers";
+import { BigNumber, BytesLike, Contract, Signer, utils, ContractReceipt, ContractTransaction, BigNumberish } from "ethers";
 import { FormatTypes, FunctionFragment, hexDataSlice } from "ethers/lib/utils";
 import { Provider } from "@ethersproject/providers";
 import { Result, defaultAbiCoder } from "ethers/lib/utils";
@@ -13,21 +13,7 @@ import { InternalProposalState, Proposal, ProposalBuilder } from "./proposal"
 import { ContractLike, ContractOptional, IAction } from "./types"
 import { toBigNumber } from "../util"
 
-export enum AlphaProposalState {
-  PENDING,
-  ACTIVE,
-  CANCELED,
-  DEFEATED,
-  SUCCEDED,
-  QUEUED,
-  EXPIRED,
-  EXECUTED,
-}
-
-export interface IAlphaProposalAction extends IAction {
-  contract: ContractOptional
-  args: Result
-}
+// ---------- Helper Functions ----------
 
 function loadGovernor(contract: ContractLike, provider: Provider) : GovernorAlpha {
   // If `contract` is already a type contract
@@ -44,6 +30,28 @@ function loadVotingToken(contract: ContractLike, provider: Provider) : VotingTok
   }
   return VotingToken__factory.connect(contract, provider)
 }
+
+// -------------------- Define proposal states --------------------
+
+export enum AlphaProposalState {
+  PENDING,
+  ACTIVE,
+  CANCELED,
+  DEFEATED,
+  SUCCEDED,
+  QUEUED,
+  EXPIRED,
+  EXECUTED,
+}
+
+// -------------------- Define proposal actions --------------------
+
+export interface IAlphaProposalAction extends IAction {
+  contract: ContractOptional
+  args: Result
+}
+
+// -------------------- Define proposal --------------------
 
 export class AlphaProposal extends Proposal {
   state: AlphaProposalState = AlphaProposalState.PENDING
@@ -322,6 +330,8 @@ export class AlphaProposal extends Proposal {
     }
   }
 }
+
+// -------------------- Define proposal builder --------------------
 
 export class AlphaProposalBuilder extends ProposalBuilder {
   maxActions: number;
