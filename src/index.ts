@@ -2,8 +2,7 @@ import { extendEnvironment , extendConfig, task, types } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 
-import { AlphaProposalBuilder } from "./builders";
-import { AlphaProposal } from "./proposals";
+import { AlphaProposal, AlphaProposalBuilder } from "./proposals/compound-alpha";
 // import { ExampleHardhatRuntimeEnvironmentField } from "./ExampleHardhatRuntimeEnvironmentField";
 // This import is needed to let the TypeScript compiler know that it should include your type
 // extensions in your npm package's types file.
@@ -53,7 +52,7 @@ task("proposal", "Interact with proposals using hardhat")
           proposal.setGovernor(governorContract)
           proposal.setVotingToken(votingTokenContract)
           
-          await proposal.loadFromId(id)
+          await proposal.loadProposal(id)
           await proposal.printProposalInfo()
         }
         break;

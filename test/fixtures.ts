@@ -41,22 +41,22 @@ export const alphaProposalFixture: Fixture<AlphaProposalsFixture> =
 
     const votingToken = (await deployContract(
       deployer,
-      require("../src/bytecode/votingToken.json"),
+      require("../artifacts/votingToken.json"),
       [deployer.address]
     )) as VotingToken;
     const harnessTimelock = (await deployContract(
       deployer,
-      require("../src/bytecode/timelock__test.json"),
+      require("../artifacts/timelock__test.json"),
       [deployer.address, "172800"]
     )) as TimelockTest;
 
     const governor = (await deployContract(
       deployer,
-      require("../src/bytecode/governorAlpha.json"),
+      require("../artifacts/governorAlpha.json"),
       [harnessTimelock.address, votingToken.address, guardian.address]
     )) as GovernorAlpha;
 
-    const simpleStorage = (await deployContract(deployer, require("../src/bytecode/simpleStorage.json"))) as SimpleStorage
+    const simpleStorage = (await deployContract(deployer, require("../artifacts/simpleStorage.json"))) as SimpleStorage
 
     // transfer timelock to governor
     await harnessTimelock.connect(deployer).harnessSetAdmin(governor.address)

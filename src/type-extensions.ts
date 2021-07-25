@@ -5,8 +5,7 @@
 import "hardhat/types/runtime";
 
 // import { ExampleHardhatRuntimeEnvironmentField } from "./ExampleHardhatRuntimeEnvironmentField";
-import { AlphaProposalBuilder } from "./builders";
-import { AlphaProposal } from "./proposals";
+import { AlphaProposal, AlphaProposalBuilder } from "./proposals/compound-alpha";
 
 declare module "hardhat/types/config" {
   // This is an example of an extension to one of the Hardhat config values.
