@@ -22,7 +22,7 @@
     "test": "mocha --exit --recursive 'test/**/*.test.ts'",
     "build": "npm run build:types && npm run build:typescript",
     "build:typescript": "tsc",
-    "build:types": "typechain --target ethers-v5 --out-dir src/ethers-contracts src/bytecode/*",
+    "build:types": "typechain --target ethers-v5 --out-dir src/ethers-contracts ./bytecode/*",
     "watch": "tsc -w",
     "publish": "npm run build && npm publish"
   },
