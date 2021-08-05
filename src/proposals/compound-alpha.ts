@@ -213,7 +213,7 @@ export class AlphaProposal extends Proposal {
 
     let proposerAddress = await this.proposer.getAddress()
     let quoremVotes = await this.governor.quorumVotes();
-    let proposerVotes = await this.votingToken.balanceOf(proposerAddress)
+    let proposerVotes = await this.votingToken.getCurrentVotes(proposerAddress)
 
     if (proposerVotes < quoremVotes) throw new HardhatPluginError(PACKAGE_NAME, errors.NOT_ENOUGH_VOTES)
 
