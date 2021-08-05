@@ -173,29 +173,29 @@ export class AlphaProposal extends Proposal {
   }
 
   public async queue(signer?: Signer) {
+    if (!this.governor) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_GOVERNOR)
+
     if (this.internalState != InternalProposalState.SUBMITTED) {
       throw new HardhatPluginError(PACKAGE_NAME, errors.PROPOSAL_NOT_SUBMITTED)
     }
 
-    let governor = this.governor
-    if (signer) {
-      governor = governor!.connect(signer)
-    }
+    signer = signer ? signer : this.proposer
+    if (!signer) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_SIGNER);
 
-    await governor!.queue(this.id)
+    await this.governor.connect(signer).queue(this.id)
   }
 
   public async execute(signer?: Signer) {
+    if (!this.governor) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_GOVERNOR)
+
     if (this.internalState != InternalProposalState.SUBMITTED) {
       throw new HardhatPluginError(PACKAGE_NAME, errors.PROPOSAL_NOT_SUBMITTED)
     }
 
-    let governor = this.governor
-    if (signer) {
-      governor = governor!.connect(signer)
-    }
+    signer = signer ? signer : this.proposer
+    if (!signer) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_SIGNER);
 
-    await governor!.execute(this.id)
+    await this.governor.connect(signer).execute(this.id)
   }
 
   /**
@@ -219,7 +219,7 @@ export class AlphaProposal extends Proposal {
 
     let timelock = Timelock__factory.connect(await this.governor.timelock(), provider)
 
-    await this.propose(this.proposer)
+    await this.propose()
     let votingDelay = await (await this.governor.votingDelay()).add(1)
     await this.mineBlocks(votingDelay)
 
