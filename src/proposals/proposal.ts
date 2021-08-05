@@ -2,6 +2,7 @@ import { BigNumberish, BigNumber, BytesLike, Signer } from "ethers";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
+import { toBigNumber } from "../util";
 import { IProposal, IAction, IProposalBuilder } from "./types";
 import { PACKAGE_NAME, errors } from "../constants";
 
@@ -101,6 +102,24 @@ export abstract class Proposal implements IProposal {
 
   protected getProvider() {return this.hre.network.provider}
   protected getEthersProvider() {return this.hre.ethers.provider}
+
+  protected async mineBlocks(blocks: any) {
+    let blocksToMine = toBigNumber(blocks).toNumber()
+  
+    for (let i = 0; i < blocksToMine; i++) {
+      await this.mineBlock()
+    }
+  }
+  
+  protected async  mineBlock(timestamp?: number) {
+    let provider = this.getEthersProvider()
+
+    if (timestamp) {
+      await provider.send("evm_mine", [timestamp])
+    } else {
+      await provider.send("evm_mine", [])
+    }
+  }
 }
 
 export abstract class ProposalBuilder implements IProposalBuilder {

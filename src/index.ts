@@ -52,8 +52,8 @@ task("proposal", "Interact with proposals using hardhat")
           proposal.setGovernor(governorContract)
           proposal.setVotingToken(votingTokenContract)
           
-          await proposal.loadProposal(id)
-          await proposal.printProposalInfo()
+          let loadedProposal = await proposal.loadProposal(id)
+          await loadedProposal.printProposalInfo()
         }
         break;
     }

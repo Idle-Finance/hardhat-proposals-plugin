@@ -91,7 +91,7 @@ export class AlphaProposal extends Proposal {
     if (!this.governor) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_GOVERNOR)
 
     proposer = proposer ? proposer : this.proposer
-    if (!proposer) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_SIGNER);
+    if (!proposer) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_PROPOSER);
 
     const governorAsProposer = this.governor.connect(proposer)
 
@@ -198,8 +198,42 @@ export class AlphaProposal extends Proposal {
     await governor!.execute(this.id)
   }
 
+  /**
+   * This method will simulate the proposal using the full on-chain process.
+   * This may take significant time depending on the hardware you are using.
+   * 
+   * @notice For this method to work the proposal must have a proposer with enough votes to reach quorem
+   */
   public async _fullSimulate() {
-    throw new Error("Method not implmenented")
+    if (!this.governor) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_GOVERNOR)
+    if (!this.votingToken) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_VOTING_TOKEN)
+    if (!this.proposer) throw new HardhatPluginError(PACKAGE_NAME, errors.NO_PROPOSER)
+
+    let provider = this.getEthersProvider()
+
+    let proposerAddress = await this.proposer.getAddress()
+    let quoremVotes = await this.governor.quorumVotes();
+    let proposerVotes = await this.votingToken.balanceOf(proposerAddress)
+
+    if (proposerVotes < quoremVotes) throw new HardhatPluginError(PACKAGE_NAME, errors.NOT_ENOUGH_VOTES)
+
+    let timelock = Timelock__factory.connect(await this.governor.timelock(), provider)
+
+    await this.propose(this.proposer)
+    let votingDelay = await (await this.governor.votingDelay()).add(1)
+    await this.mineBlocks(votingDelay)
+
+    await this.vote(this.proposer, true)
+    let votingPeriod = await this.governor.votingPeriod()
+    await this.mineBlocks(votingPeriod)
+
+    await this.queue()
+    let delay = await timelock.delay()
+    let blockInfo = await provider.getBlock("latest")
+    let endTimeStamp = delay.add(blockInfo.timestamp).add("50").toNumber()
+    await this.mineBlock(endTimeStamp)
+    
+    await this.execute()
   }
 
   // queues the action to the timelock by impersonating the governor
@@ -229,8 +263,8 @@ export class AlphaProposal extends Proposal {
     for (let i = 0; i < this.targets.length; i++) {
       await timelock.queueTransaction(this.targets[i], this.values[i], this.signatures[i], this.calldatas[i], eta)
     }
-    await provider.send("evm_mine", [])
-    await provider.send("evm_mine", [eta.toNumber()])
+    await this.mineBlocks(1)
+    await this.mineBlock(eta.toNumber())
 
     let receipts = new Array<ContractTransaction>();
     for (let i = 0; i < this.targets.length; i++) {
@@ -261,7 +295,7 @@ export class AlphaProposal extends Proposal {
       )
     }
 
-    await provider.send("evm_mine", [])
+    await this.mineBlock()
     for (let i = 0; i < this.targets.length; i++) {
       let r = await receipts[i].wait().catch(r => {return r.receipt as ContractReceipt})
       if (r.status != 1) {
@@ -401,6 +435,16 @@ export class AlphaProposalBuilder extends ProposalBuilder {
     return this;
   }
 
+  /**
+   * Set the description for the proposal
+   * 
+   * Some UI interfaces for proposals require a newline `\n`
+   * be added in the description to partition the proposal
+   * title and the proposal description. It is at the users
+   * descresion whether to add this or not. 
+   * 
+   * @param description  The description field to set for the proposal
+   */
   setDescription(description: string): AlphaProposalBuilder {
     this.proposal.description = description;
 

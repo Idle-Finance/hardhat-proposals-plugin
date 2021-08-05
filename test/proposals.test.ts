@@ -1,6 +1,6 @@
 // tslint:disable-next-line no-implicit-dependencies
 import { createFixtureLoader } from "@ethereum-waffle/provider";
-import { assert } from "chai";
+import { assert, expect } from "chai";
 import { BigNumber } from "ethers";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
@@ -17,12 +17,12 @@ describe("AlphaProposalBuilder", function () {
       this.hre.waffle.provider
     );
 
-    const { governor, votingToken, proposer, simpleStorage } = await loadFixture(alphaProposalFixture);
+    const { governor, votingToken, proposer, voter2, simpleStorage } = await loadFixture(alphaProposalFixture);
 
     let proposal = this.hre.proposals.builders.alpha()
       .setGovernor(governor)
       .setVotingToken(votingToken)
-      .setProposer(proposer)
+      .setProposer(voter2)
       .addContractAction(simpleStorage, "set", [BigNumber.from("1")])
       .addContractAction(simpleStorage, "set", [BigNumber.from("2")])
       .addContractAction(simpleStorage, "set", [BigNumber.from("3")])
@@ -40,12 +40,8 @@ describe("AlphaProposalBuilder", function () {
 
     await proposal.simulate()
 
-    console.log(await simpleStorage.get())
-    // await proposal.queue()
-    // await proposal.execute()
-
-
-    await proposal.printProposalInfo()
+    let storageValue = await simpleStorage.get()
+    expect(storageValue).to.equal(BigNumber.from("10"))
   });
 
   it("loads proposal via task", async function() {
@@ -72,10 +68,6 @@ describe("AlphaProposalBuilder", function () {
     await proposal.vote(proposer);
     await proposal.vote(voter2, false);
 
-    let fetchedProposal = this.hre.proposals.proposals.alpha()
-    fetchedProposal.setGovernor(governor)
-    fetchedProposal.setVotingToken(votingToken)
-
-    await this.hre.run("proposal", { governor: governor.address, 'votingToken': votingToken.address, id: 1})
+    await this.hre.run("proposal", { governor: governor.address, votingToken: votingToken.address, id: proposal.id.toNumber()})
   })
 });
