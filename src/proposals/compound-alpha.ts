@@ -371,7 +371,7 @@ export class AlphaProposalBuilder extends ProposalBuilder {
   maxActions: number;
   proposal: AlphaProposal
 
-  constructor(hre: HardhatRuntimeEnvironment, governor?: ContractLike, votingToken?: ContractLike, maxActions=10) {
+  constructor(hre: HardhatRuntimeEnvironment, governor?: ContractLike, votingToken?: ContractLike, maxActions=15) {
     super(hre)
 
     this.maxActions = maxActions;
